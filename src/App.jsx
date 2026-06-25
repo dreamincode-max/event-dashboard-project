@@ -1,61 +1,83 @@
+import { useState } from "react";
+import { Routes, Route } from "react-router-dom";
+import Profile from "./Screens/Profile";
+import Sidebar from "./components/Sidebar";
+import Header from "./components/Header";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+import Dashboard from "./Screens/Dashboard";
+import Events from "./Screens/Events";
+import Guests from "./Screens/Guests";
+import Budget from "./Screens/Budget";
+import Settings from "./Screens/Settings";
+import Login from "./Screens/Login";
+import Register from "./Screens/Register";
+
 function App() {
+  const [darkMode, setDarkMode] = useState(false);
+
   return (
-    <div className="min-h-screen flex bg-slate-100">
-      
-      {/* Sidebar */}
-      <div className="w-64 bg-slate-900 text-white p-6">
-        <h1 className="text-2xl font-bold mb-8">Event Planner</h1>
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-        <ul className="space-y-4">
-          <li className="hover:text-blue-400 cursor-pointer">Dashboard</li>
-          <li className="hover:text-blue-400 cursor-pointer">Events</li>
-          <li className="hover:text-blue-400 cursor-pointer">Guests</li>
-          <li className="hover:text-blue-400 cursor-pointer">Budget</li>
-          <li className="hover:text-blue-400 cursor-pointer">Settings</li>
-        </ul>
-      </div>
+      {/* Protected Routes */}
+      <Route
+        path="/*"
+        element={
+          <ProtectedRoute>
+            <div className="flex min-h-screen">
+              <Sidebar />
 
-      {/* Main Content */}
-      <div className="flex-1 p-8">
+              <div
+                className={`flex-1 p-6 transition-all duration-300 ${
+                  darkMode
+                    ? "bg-slate-900 text-white"
+                    : "bg-slate-100 text-black"
+                }`}
+              >
+                <Header
+                  darkMode={darkMode}
+                  setDarkMode={setDarkMode}
+                />
 
-        {/* Navbar */}
-        <div className="bg-white p-4 rounded-xl shadow flex justify-between items-center">
-          <h2 className="text-2xl font-bold">
-            Event Planning Dashboard
-          </h2>
+                <Routes>
+                  <Route
+                    path="/"
+                    element={<Dashboard darkMode={darkMode} />}
+                  />
 
-          <div className="font-medium">
-            Welcome, Admin 👋
-          </div>
-        </div>
+                  <Route
+                    path="/events"
+                    element={<Events darkMode={darkMode} />}
+                  />
 
-        {/* Cards */}
-        <div className="grid grid-cols-4 gap-6 mt-8">
+                  <Route
+                    path="/guests"
+                    element={<Guests darkMode={darkMode} />}
+                  />
 
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="text-gray-500">Total Events</h3>
-            <p className="text-3xl font-bold mt-2">24</p>
-          </div>
+                  <Route
+                    path="/budget"
+                    element={<Budget darkMode={darkMode} />}
+                  />
 
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="text-gray-500">Upcoming</h3>
-            <p className="text-3xl font-bold mt-2">8</p>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="text-gray-500">Guests</h3>
-            <p className="text-3xl font-bold mt-2">520</p>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="text-gray-500">Budget</h3>
-            <p className="text-3xl font-bold mt-2">₹1.2L</p>
-          </div>
-
-        </div>
-
-      </div>
-    </div>
+                  <Route
+                    path="/settings"
+                    element={<Settings darkMode={darkMode} />}
+                  />
+                  <Route
+                     path="/profile"
+                    element={<Profile />}
+                  />
+                </Routes>
+              </div>
+            </div>
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   );
 }
 

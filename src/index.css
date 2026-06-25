@@ -1,1 +1,23 @@
 @import "tailwindcss";
+
+body {
+  background: #fff8f5;
+  font-family: "Poppins", sans-serif;
+}
+
+.card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.primary-btn {
+  background: #d8a7b1;
+  color: white;
+  border-radius: 12px;
+  transition: 0.3s;
+}
+
+.primary-btn:hover {
+  transform: translateY(-2px);
+}
