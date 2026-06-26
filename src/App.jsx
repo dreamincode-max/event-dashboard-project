@@ -4,7 +4,7 @@ import Profile from "./Screens/Profile";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import ProtectedRoute from "./components/ProtectedRoute";
-
+import EventDetails from "./Screens/EventDetails";
 import Dashboard from "./Screens/Dashboard";
 import Events from "./Screens/Events";
 import Guests from "./Screens/Guests";
@@ -71,6 +71,10 @@ function App() {
                      path="/profile"
                     element={<Profile />}
                   />
+                  <Route
+  path="/event/:shareId"
+  element={<EventDetails />}
+/>
                 </Routes>
               </div>
             </div>

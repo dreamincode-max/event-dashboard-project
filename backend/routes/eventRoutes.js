@@ -22,6 +22,37 @@ router.post("/", async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
+router.get("/share/:shareId", async (req, res) => {
+  try {
+    const event = await Event.findOne({
+      shareId: req.params.shareId,
+    });
+
+    if (!event) {
+      return res.status(404).json({
+        message: "Event not found",
+      });
+    }
+
+    res.json(event);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+});
+// Get Single Event
+router.get("/:id", async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+
+    res.json(event);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
 // Update Event
 router.put("/:id", async (req, res) => {
   try {
@@ -49,4 +80,5 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 module.exports = router;

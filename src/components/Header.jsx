@@ -14,17 +14,23 @@ function Header({
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   return (
-    <div className="bg-white rounded-3xl shadow-lg p-5 mb-8 flex justify-between items-center">
-      <h1 className="text-2xl font-bold text-black">
-        Event Planner Dashboard
-      </h1>
+    <div className="bg-white rounded-3xl shadow-lg px-8 py-5 mb-8 flex justify-between items-center border border-pink-100">
+      <div>
+  <h1 className="text-3xl font-bold text-gray-800">
+    Event Planner Dashboard
+  </h1>
+
+  <p className="text-gray-500 mt-1">
+    Welcome back! Manage all your events in one place.
+  </p>
+</div>
 
       <div className="flex items-center gap-6">
         <button
           onClick={() =>
             setDarkMode(!darkMode)
           }
-          className="px-4 py-2 rounded-xl bg-gray-200 flex items-center gap-2 hover:bg-gray-300 transition"
+          className="px-5 py-3 rounded-2xl bg-pink-50 border border-pink-200 hover:bg-pink-100 transition-all duration-300 flex items-center gap-2 shadow-sm"
         >
           {darkMode ? (
             <>
@@ -48,17 +54,19 @@ function Header({
     onClick={() => setShowMenu(!showMenu)}
     className="flex items-center gap-3"
   >
-    <FaUserCircle
-      size={40}
-      className="text-gray-600"
-    />
+    <div className="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center">
+  <FaUserCircle
+    size={30}
+    className="text-pink-600"
+  />
+</div>
 
     <div>
-      <p className="font-semibold text-black">
+     <p className="font-bold text-gray-800 text-lg"> 
         Jahnavi
       </p>
 
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-pink-500 font-medium">
         Event Manager
       </p>
     </div>

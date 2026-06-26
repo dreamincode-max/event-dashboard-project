@@ -1,34 +1,21 @@
-function StatsCard({
-  title,
-  value,
-  icon,
-  darkMode,
-}) {
+import React from "react";
+
+function StatsCard({ title, value, icon }) {
   return (
-    <div
-      className={`p-6 rounded-3xl shadow-lg hover:scale-105 transition ${
-        darkMode
-          ? "bg-slate-800 text-white"
-          : "bg-white text-black"
-      }`}
-    >
-      <div className="text-3xl mb-3">
-        {icon}
+    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 p-6 flex items-center justify-between">
+      <div>
+        <p className="text-gray-500 dark:text-gray-300 text-sm">
+          {title}
+        </p>
+
+        <h2 className="text-3xl font-bold text-gray-800 dark:text-white mt-2">
+          {value}
+        </h2>
       </div>
 
-      <h3
-        className={
-          darkMode
-            ? "text-gray-300"
-            : "text-gray-500"
-        }
-      >
-        {title}
-      </h3>
-
-      <p className="text-3xl font-bold mt-2 text-[#B76E79]">
-        {value}
-      </p>
+      <div className="w-16 h-16 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 text-white flex items-center justify-center text-3xl shadow-lg">
+        {icon}
+      </div>
     </div>
   );
 }

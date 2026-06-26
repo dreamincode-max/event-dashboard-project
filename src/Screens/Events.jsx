@@ -16,6 +16,7 @@ function Events({ darkMode }) {
   const [budget, setBudget] = useState("");
   const [status, setStatus] = useState("Upcoming");
    const [editId, setEditId] = useState(null);
+   const [selectedEvent, setSelectedEvent] = useState(null);
 
   useEffect(() => {
     fetchEvents();
@@ -218,7 +219,15 @@ const handleEdit = (event) => {
     event.status || "Upcoming"
   );
 };
+const copyLink = (shareId) => {
+  console.log("Share ID:", shareId);
 
+  const link = `${window.location.origin}/event/${shareId}`;
+
+  navigator.clipboard.writeText(link);
+
+  alert("Event link copied!");
+};
 
   return (
 
@@ -339,10 +348,10 @@ Total Events: {events.length}
 placeholder="Search events..."
 value={searchTerm}
 onChange={(e)=>setSearchTerm(e.target.value)}
-className="border dark:border-slate-600 p-3 rounded-lg"
+className="border border-gray-300 dark:border-slate-600 p-3 rounded-xl w-80 focus:outline-none focus:ring-2 focus:ring-pink-400"
 />
 </div>
-<table className="w-full">
+<table className="w-full border-collapse">
 <thead>
 <tr className="border-b">
 <th className="p-3 text-left">
@@ -381,8 +390,8 @@ filteredEvents.map((event)=>(
 
 
 <tr
-key={event._id}
-className="border-b"
+  key={event._id}
+  className="border-b hover:bg-pink-50 dark:hover:bg-slate-700 transition"
 >
 
 
@@ -410,18 +419,18 @@ className="border-b"
 
 
 <select
-
-value={event.status}
-
-onChange={(e)=>
-updateStatus(
-event._id,
-e.target.value
-)
-}
-
-className="border p-2 rounded"
-
+  value={event.status}
+  onChange={(e) =>
+    updateStatus(event._id, e.target.value)
+  }
+  className={`p-2 rounded-lg text-white font-semibold
+  ${
+    event.status === "Upcoming"
+      ? "bg-blue-500"
+      : event.status === "Completed"
+      ? "bg-green-500"
+      : "bg-red-500"
+  }`}
 >
 
 
@@ -452,24 +461,35 @@ Cancelled
 <div className="flex gap-2">
 
   <button
-  type="button"
-  onClick={() => {
-    console.log("Edit clicked", event);
-    handleEdit(event);
-  }}
-  className="bg-yellow-500 text-white px-4 py-2 rounded"
->
-  Edit
-</button>
+    type="button"
+    onClick={() => setSelectedEvent(event)}
+    className="bg-blue-600 text-white px-4 py-2 rounded"
+  >
+    View
+  </button>
 
   <button
-    onClick={() =>
-      deleteEvent(event._id)
-    }
-    className="bg-red-600 text-white px-4 py-2 rounded"
+    type="button"
+    onClick={() => handleEdit(event)}
+    className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition"
+  >
+    Edit
+  </button>
+
+  <button
+    type="button"
+    onClick={() => deleteEvent(event._id)}
+    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition"
   >
     Delete
   </button>
+  <button
+  type="button"
+  onClick={() => copyLink(event.shareId)}
+  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition"
+>
+  Copy Link
+</button>
 
 </div>
 

@@ -19,6 +19,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  CartesianGrid,
 } from "recharts";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
@@ -105,7 +106,7 @@ const progress =
   }`}
 >
         <h1 className="text-4xl font-bold text-[#B76E79]">
-        Plan Your Dream Events
+        Plan Your Events
         </h1>
 
         <p className="mt-3 text-gray-700">
@@ -150,18 +151,38 @@ const progress =
     Event Status Overview
   </h2>
 
-  <ResponsiveContainer
-  width="100%"
-  height={300}
->
+  <ResponsiveContainer width="100%" height={300}>
   <BarChart data={chartData}>
-    <XAxis dataKey="name" />
-    <YAxis />
-    <Tooltip />
+    <CartesianGrid
+      strokeDasharray="3 3"
+      stroke={darkMode ? "#475569" : "#E5E7EB"}
+    />
+
+    <XAxis
+      dataKey="name"
+      stroke={darkMode ? "#ffffff" : "#374151"}
+    />
+
+    <YAxis
+      stroke={darkMode ? "#ffffff" : "#374151"}
+    />
+
+    <Tooltip
+      contentStyle={{
+        backgroundColor: darkMode
+          ? "#1E293B"
+          : "#ffffff",
+        color: darkMode
+          ? "#ffffff"
+          : "#000000",
+        borderRadius: "12px",
+        border: "none",
+      }}
+    />
 
     <Bar
       dataKey="value"
-      radius={[8, 8, 0, 0]}
+      radius={[10, 10, 0, 0]}
     >
       {chartData.map((entry, index) => (
         <Cell
@@ -178,29 +199,51 @@ const progress =
     Budget Analytics
   </h2>
 
-  <ResponsiveContainer
-    width="100%"
-    height={300}
-  >
-    <BarChart data={budgetData}>
-      <XAxis dataKey="name" />
-      <YAxis />
-      <Tooltip />
-      <Bar
-        dataKey="budget"
-        fill="#10B981"
-      />
-    </BarChart>
-  </ResponsiveContainer>
+ <ResponsiveContainer width="100%" height={320}>
+  <BarChart data={budgetData}>
+    <CartesianGrid
+      strokeDasharray="3 3"
+      stroke={darkMode ? "#475569" : "#E5E7EB"}
+    />
+
+    <XAxis
+      dataKey="name"
+      stroke={darkMode ? "#ffffff" : "#374151"}
+    />
+
+    <YAxis
+      stroke={darkMode ? "#ffffff" : "#374151"}
+    />
+
+    <Tooltip
+      contentStyle={{
+        backgroundColor: darkMode
+          ? "#1E293B"
+          : "#ffffff",
+        color: darkMode
+          ? "#ffffff"
+          : "#000000",
+        borderRadius: "12px",
+        border: "none",
+      }}
+    />
+
+    <Bar
+      dataKey="budget"
+      fill="#10B981"
+      radius={[10, 10, 0, 0]}
+    />
+  </BarChart>
+</ResponsiveContainer>
 </div>
     <div className="bg-white p-6 rounded-3xl shadow-lg mt-8">
   <h2 className="text-2xl font-bold mb-4">
     Recent Events
   </h2>
 
-  <table className="w-full">
+  <table className="w-full border-separate border-spacing-y-2">
     <thead>
-      <tr className="border-b">
+  <tr className="bg-gray-100 text-gray-700 rounded-xl">
         <th className="text-left p-3">
           Event
         </th>
@@ -221,27 +264,49 @@ const progress =
         .reverse()
         .map((event) => (
           <tr
-            key={event._id}
-            className="border-b"
-          >
-            <td className="p-3">
+  key={event._id}
+  className={`border-b ${
+    darkMode
+      ? "hover:bg-slate-700"
+      : "hover:bg-pink-50"
+  }`}
+>
+            <td
+  className={`p-3 ${
+    darkMode
+      ? "text-white"
+      : "text-gray-700"
+  }`}
+>
               {event.title}
             </td>
 
-            <td className="p-3">
-              {event.date}
-            </td>
+            <td
+  className={`p-3 ${
+    darkMode
+      ? "text-white"
+      : "text-gray-700"
+  }`}
+></td>
 
-            <td className="p-3">
-              {event.status}
-            </td>
+            <td
+  className={`p-3 ${
+    darkMode
+      ? "text-white"
+      : "text-gray-700"
+  }`}
+></td>
           </tr>
         ))}
     </tbody>
   </table>
 </div>
 <div className="bg-white p-6 rounded-3xl shadow-lg mt-8">
-  <h2 className="text-2xl font-bold mb-4">
+  <h2 className={`p-6 rounded-3xl shadow-lg mt-8 ${
+  darkMode
+    ? "bg-slate-800"
+    : "bg-white"
+}`}>
     Event Calendar
   </h2>
 
