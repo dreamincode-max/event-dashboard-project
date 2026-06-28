@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 function Events({ darkMode }) {
-
+const navigate = useNavigate();
   const [events, setEvents] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -461,22 +462,25 @@ Cancelled
 <div className="flex gap-2 justify-center">
 
   <button
+    type="button"
     onClick={() => navigate(`/event/${event.shareId}`)}
-    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition"
+    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
   >
     View
   </button>
 
   <button
-    onClick={() => editEvent(event)}
-    className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition"
+    type="button"
+    onClick={() => handleEdit(event)}
+    className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg"
   >
     Edit
   </button>
 
   <button
+    type="button"
     onClick={() => deleteEvent(event._id)}
-    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition"
+    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
   >
     Delete
   </button>
