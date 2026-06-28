@@ -458,38 +458,28 @@ Cancelled
 <td className="p-3">
 
 
-<div className="flex gap-2">
+<div className="flex gap-2 justify-center">
 
   <button
-    type="button"
-    onClick={() => setSelectedEvent(event)}
-    className="bg-blue-600 text-white px-4 py-2 rounded"
+    onClick={() => navigate(`/event/${event.shareId}`)}
+    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition"
   >
     View
   </button>
 
   <button
-    type="button"
-    onClick={() => handleEdit(event)}
-    className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition"
+    onClick={() => editEvent(event)}
+    className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition"
   >
     Edit
   </button>
 
   <button
-    type="button"
     onClick={() => deleteEvent(event._id)}
-    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition"
+    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition"
   >
     Delete
   </button>
-  <button
-  type="button"
-  onClick={() => copyLink(event.shareId)}
-  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition"
->
-  Copy Link
-</button>
 
 </div>
 

@@ -82,16 +82,27 @@ function Header({
 </button>
 
       <button
-        className="block w-full text-left px-4 py-3 hover:bg-gray-100"
-      >
-        Settings
-      </button>
+  onClick={() => {
+    setShowMenu(false);
+    navigate("/settings");
+  }}
+  className="block w-full text-left px-4 py-3 hover:bg-pink-50"
+>
+  Settings
+</button>
 
       <button
         onClick={() => {
-          localStorage.removeItem("token");
-          window.location.href = "/login";
-        }}
+  const confirmLogout = window.confirm(
+    "Are you sure you want to logout?"
+  );
+
+  if (confirmLogout) {
+    setShowMenu(false);
+    localStorage.removeItem("token");
+    navigate("/login");
+  }
+}}
         className="block w-full text-left px-4 py-3 text-red-600 hover:bg-gray-100"
       >
         Logout

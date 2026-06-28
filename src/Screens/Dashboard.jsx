@@ -95,7 +95,45 @@ const progress =
         (completedEvents / events.length) * 100
       )
     : 0;
+    const highestBudgetEvent =
+  events.length > 0
+    ? events.reduce((max, event) =>
+        Number(event.budget) > Number(max.budget)
+          ? event
+          : max
+      )
+    : null;
+
+const nextEvent = events
+  .filter((event) => event.status === "Upcoming")
+  .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
+   const aiRecommendations = [];
+
+if (highestBudgetEvent) {
+  aiRecommendations.push(
+    `💰 ${highestBudgetEvent.title} has the highest budget (₹${highestBudgetEvent.budget}).`
+  );
+}
+
+if (upcomingEvents > 0) {
+  aiRecommendations.push(
+    `📅 ${upcomingEvents} upcoming events need preparation.`
+  );
+}
+
+if (completedEvents > 0) {
+  aiRecommendations.push(
+    `✅ ${completedEvents} events have been completed successfully.`
+  );
+}
+
+if (cancelledEvents > 0) {
+  aiRecommendations.push(
+    `⚠️ ${cancelledEvents} events were cancelled.`
+  );
+}
    
+
   return (
     <div className={darkMode ? "text-white" : "text-black"}>
       <div
@@ -235,6 +273,165 @@ const progress =
     />
   </BarChart>
 </ResponsiveContainer>
+<div
+  className={`p-6 rounded-3xl shadow-lg mt-8 ${
+    darkMode
+      ? "bg-slate-800 text-white"
+      : "bg-white"
+  }`}
+>
+  <h2 className="text-2xl font-bold mb-4">
+    🤖 Smart Recommendations
+  </h2>
+  <div className="space-y-3">
+  {aiRecommendations.map((item, index) => (
+    <div
+      key={index}
+      className={`p-4 rounded-xl border-l-4 ${
+        darkMode
+          ? "bg-slate-700 border-blue-400"
+          : "bg-blue-50 border-blue-600"
+      }`}
+    >
+      <span className="font-semibold">
+        🤖 AI Insight
+      </span>
+
+      <p className="mt-1">{item}</p>
+    </div>
+  ))}
+</div>
+
+  <div className="space-y-3">
+
+    {totalEvents === 0 && (
+      <div className="bg-yellow-100 text-yellow-800 p-3 rounded-xl">
+        No events found. Add your first event.
+      </div>
+    )}
+
+    {upcomingEvents > 0 && (
+      <div className="bg-blue-100 text-blue-800 p-3 rounded-xl">
+        You have <strong>{upcomingEvents}</strong> upcoming event(s). Make sure vendors and guests are confirmed.
+      </div>
+    )}
+
+    {completedEvents > 0 && (
+      <div className="bg-green-100 text-green-800 p-3 rounded-xl">
+        <strong>{completedEvents}</strong> event(s) completed. Generate the final report.
+      </div>
+    )}
+
+    {cancelledEvents > 0 && (
+      <div className="bg-red-100 text-red-800 p-3 rounded-xl">
+        <strong>{cancelledEvents}</strong> event(s) were cancelled. Review the cancellation reason.
+      </div>
+    )}
+
+    {totalBudget > 50000 && (
+      <div className="bg-purple-100 text-purple-800 p-3 rounded-xl">
+        Total budget exceeds ₹50,000. Review expenses carefully.
+      </div>
+    )}
+
+    {guests.length === 0 && (
+      <div className="bg-orange-100 text-orange-800 p-3 rounded-xl">
+        No guests have been added yet.
+      </div>
+    )}
+
+  </div>
+  <div
+  className={`p-6 rounded-3xl shadow-lg mt-8 ${
+    darkMode
+      ? "bg-slate-800 text-white"
+      : "bg-white"
+  }`}
+>
+  <div className="flex justify-between items-center mb-3">
+    <h2 className="text-2xl font-bold">
+      Project Progress
+    </h2>
+
+    <span className="font-bold text-lg">
+      {progress}%
+    </span>
+  </div>
+
+  <div className="w-full bg-gray-300 rounded-full h-5 overflow-hidden">
+    <div
+      className="bg-green-500 h-5 rounded-full transition-all duration-700"
+      style={{ width: `${progress}%` }}
+    ></div>
+  </div>
+
+  <p className="mt-4 text-gray-500 dark:text-gray-300">
+    Completed Events: {completedEvents} / {totalEvents}
+  </p>
+</div>
+<div
+  className={`p-6 rounded-3xl shadow-lg mt-8 ${
+    darkMode
+      ? "bg-slate-800 text-white"
+      : "bg-white"
+  }`}
+>
+  <h2 className="text-2xl font-bold mb-6">
+    📋 Event Summary
+  </h2>
+
+  <div className="grid md:grid-cols-3 gap-6">
+
+    <div className="bg-blue-500 text-white p-5 rounded-2xl">
+      <p className="text-sm opacity-80">
+        Total Budget
+      </p>
+
+      <h2 className="text-3xl font-bold mt-2">
+        ₹{totalBudget.toLocaleString()}
+      </h2>
+    </div>
+
+    <div className="bg-green-500 text-white p-5 rounded-2xl">
+      <p className="text-sm opacity-80">
+        Highest Budget Event
+      </p>
+
+      <h2 className="text-xl font-bold mt-2">
+        {highestBudgetEvent
+          ? highestBudgetEvent.title
+          : "No Events"}
+      </h2>
+
+      <p className="mt-2">
+        ₹
+        {highestBudgetEvent
+          ? highestBudgetEvent.budget
+          : 0}
+      </p>
+    </div>
+
+    <div className="bg-purple-500 text-white p-5 rounded-2xl">
+      <p className="text-sm opacity-80">
+        Next Upcoming Event
+      </p>
+
+      <h2 className="text-xl font-bold mt-2">
+        {nextEvent
+          ? nextEvent.title
+          : "No Upcoming Event"}
+      </h2>
+
+      <p className="mt-2">
+        {nextEvent
+          ? nextEvent.date
+          : "--"}
+      </p>
+    </div>
+
+  </div>
+</div>
+</div>
 </div>
     <div className="bg-white p-6 rounded-3xl shadow-lg mt-8">
   <h2 className="text-2xl font-bold mb-4">
@@ -302,13 +499,9 @@ const progress =
   </table>
 </div>
 <div className="bg-white p-6 rounded-3xl shadow-lg mt-8">
-  <h2 className={`p-6 rounded-3xl shadow-lg mt-8 ${
-  darkMode
-    ? "bg-slate-800"
-    : "bg-white"
-}`}>
-    Event Calendar
-  </h2>
+  <h2 className="text-2xl font-bold mb-4">
+  📅 Event Calendar
+</h2>
 
   <Calendar
     onChange={setSelectedDate}
