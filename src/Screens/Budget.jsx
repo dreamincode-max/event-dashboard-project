@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import API from "../api";
-
+import PageHeader from "../components/ui/PageHeader";
+import StatsCard from "../components/StatsCard";
+import { SkeletonDashboard } from "../components/ui/Skeleton";
+import {
+  getChartTooltipStyle,
+  truncateText,
+} from "../utils/eventHelpers";
+import { FaWallet, FaArrowUp, FaArrowDown, FaChartBar } from "react-icons/fa";
 import {
   BarChart,
   Bar,
@@ -13,6 +21,7 @@ import {
 
 function Budget({ darkMode }) {
   const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchEvents();
@@ -24,167 +33,134 @@ function Budget({ darkMode }) {
       setEvents(res.data);
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   const chartData = events.map((event) => ({
-    name: event.title,
+    name: truncateText(event.title, 14),
     budget: Number(event.budget || 0),
   }));
 
   const analytics = useMemo(() => {
     if (events.length === 0) {
-      return {
-        totalBudget: 0,
-        highestBudget: 0,
-        lowestBudget: 0,
-        averageBudget: 0,
-      };
+      return { totalBudget: 0, highestBudget: 0, lowestBudget: 0, averageBudget: 0 };
     }
-
-    const budgets = events.map((event) =>
-      Number(event.budget || 0)
-    );
-
-    const totalBudget = budgets.reduce(
-      (sum, budget) => sum + budget,
-      0
-    );
-
-    const highestBudget = Math.max(...budgets);
-
-    const lowestBudget = Math.min(...budgets);
-
-    const averageBudget = Math.round(
-      totalBudget / budgets.length
-    );
-
+    const budgets = events.map((event) => Number(event.budget || 0));
+    const totalBudget = budgets.reduce((sum, budget) => sum + budget, 0);
     return {
       totalBudget,
-      highestBudget,
-      lowestBudget,
-      averageBudget,
+      highestBudget: Math.max(...budgets),
+      lowestBudget: Math.min(...budgets),
+      averageBudget: Math.round(totalBudget / budgets.length),
     };
   }, [events]);
 
+  const tooltipStyle = getChartTooltipStyle(darkMode);
+
+  if (loading) return <SkeletonDashboard darkMode={darkMode} />;
+
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">
-        Budget Analytics
-      </h1>
+    <div className="space-y-6">
+      <PageHeader
+        title="Budget Analytics"
+        subtitle="Track and analyze budgets across all your events."
+        darkMode={darkMode}
+      />
 
-      <div className="grid grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow">
-          <h3 className="text-gray-500 dark:text-gray-300">
-            Total Budget
-          </h3>
-
-          <p className="text-3xl font-bold mt-2">
-            ₹{analytics.totalBudget.toLocaleString()}
-          </p>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h3 className="text-gray-500">
-            Highest Budget
-          </h3>
-
-          <p className="text-3xl font-bold mt-2">
-            ₹{analytics.highestBudget.toLocaleString()}
-          </p>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h3 className="text-gray-500">
-            Lowest Budget
-          </h3>
-
-          <p className="text-3xl font-bold mt-2">
-            ₹{analytics.lowestBudget.toLocaleString()}
-          </p>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h3 className="text-gray-500">
-            Average Budget
-          </h3>
-
-          <p className="text-3xl font-bold mt-2">
-            ₹{analytics.averageBudget.toLocaleString()}
-          </p>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <StatsCard
+          title="Total Budget"
+          value={`₹${analytics.totalBudget.toLocaleString()}`}
+          icon={<FaWallet />}
+          darkMode={darkMode}
+          index={0}
+          accent="indigo"
+        />
+        <StatsCard
+          title="Highest Budget"
+          value={`₹${analytics.highestBudget.toLocaleString()}`}
+          icon={<FaArrowUp />}
+          darkMode={darkMode}
+          index={1}
+          accent="emerald"
+        />
+        <StatsCard
+          title="Lowest Budget"
+          value={`₹${analytics.lowestBudget.toLocaleString()}`}
+          icon={<FaArrowDown />}
+          darkMode={darkMode}
+          index={2}
+          accent="amber"
+        />
+        <StatsCard
+          title="Average Budget"
+          value={`₹${analytics.averageBudget.toLocaleString()}`}
+          icon={<FaChartBar />}
+          darkMode={darkMode}
+          index={3}
+          accent="sky"
+        />
       </div>
 
-      <div className="bg-white rounded-xl shadow p-6 mt-8">
-        <h2 className="text-xl font-bold mb-4">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className={`card p-6 ${darkMode ? "card-dark" : ""}`}
+      >
+        <h2 className={`font-display text-lg font-bold mb-5 ${darkMode ? "text-white" : "text-slate-900"}`}>
           Event Budgets
         </h2>
-
-        <table className="w-full">
-          <thead>
-            <tr className="border-b">
-              <th className="text-left p-3">
-                Event
-              </th>
-
-              <th className="text-left p-3">
-                Budget
-              </th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {events.map((event) => (
-              <tr
-                key={event._id}
-                className="border-b"
-              >
-                <td className="p-3">
-                  {event.title}
-                </td>
-
-                <td className="p-3">
-                  ₹{Number(
-                    event.budget
-                  ).toLocaleString()}
-                </td>
-              </tr>
-            ))}
-
-            {events.length === 0 && (
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
               <tr>
-                <td
-                  colSpan="2"
-                  className="text-center p-8 text-gray-500"
-                >
-                  No events available
-                </td>
+                <th>Event</th>
+                <th>Budget</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {events.map((event) => (
+                <tr key={event._id}>
+                  <td className="font-medium">{event.title}</td>
+                  <td className="font-semibold text-emerald-600 dark:text-emerald-400">
+                    ₹{Number(event.budget).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+              {events.length === 0 && (
+                <tr>
+                  <td colSpan={2} className="text-center py-10 text-slate-400">
+                    No events available
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </motion.div>
 
-      <div className="bg-white rounded-xl shadow p-6 mt-8">
-        <h2 className="text-xl font-bold mb-4">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className={`card p-6 ${darkMode ? "card-dark" : ""}`}
+      >
+        <h2 className={`font-display text-lg font-bold mb-5 ${darkMode ? "text-white" : "text-slate-900"}`}>
           Budget Overview Chart
         </h2>
-
-        <div style={{ width: "100%", height: 400 }}>
-          <ResponsiveContainer>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar
-                dataKey="budget"
-                radius={[6, 6, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+        <ResponsiveContainer width="100%" height={360}>
+          <BarChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? "#334155" : "#e2e8f0"} />
+            <XAxis dataKey="name" stroke={darkMode ? "#94a3b8" : "#64748b"} tick={{ fontSize: 11 }} />
+            <YAxis stroke={darkMode ? "#94a3b8" : "#64748b"} tick={{ fontSize: 12 }} />
+            <Tooltip contentStyle={tooltipStyle} />
+            <Bar dataKey="budget" fill="#6366f1" radius={[8, 8, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </motion.div>
     </div>
   );
 }

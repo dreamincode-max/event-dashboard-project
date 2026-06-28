@@ -1,20 +1,36 @@
-<<<<<<< HEAD
-# React + Vite
+# SLV Events — Event Planning Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack MERN event planning dashboard with authentication, event/guest management, budget analytics, and AI assistant tools.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Frontend:** React 19, Vite, Tailwind CSS 4, Recharts
+- **Backend:** Express, MongoDB/Mongoose, JWT
+- **AI:** OpenAI / Gemini with demo fallback
 
-## React Compiler
+## Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Backend
 
-## Expanding the ESLint configuration
+```bash
+cd backend
+npm install
+cp .env.example .env   # add MONGO_URI, optional JWT_SECRET & AI keys
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-=======
-# event-dashboard
->>>>>>> d725826c15bab21c652f4ec7147834d77272dd40
+### Frontend
+
+```bash
+npm install
+cp .env.example .env   # optional: VITE_API_URL=http://localhost:5000/api
+npm run dev
+```
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start frontend dev server |
+| `npm run build` | Production build |
+| `cd backend && npm run dev` | Start API with nodemon |

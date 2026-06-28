@@ -7,6 +7,7 @@ const eventRoutes = require("./routes/eventRoutes");
 const guestRoutes = require("./routes/guestRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const aiRoutes = require("./routes/aiRoutes");
 
 const app = express();
 
@@ -50,6 +51,11 @@ app.use("/api/events", eventRoutes);
 app.use("/api/guests", guestRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/ai", aiRoutes);
+
+// Log AI provider on startup
+const { getProviderStatus } = require("./services/aiService");
+console.log(`AI Provider: ${getProviderStatus()}${getProviderStatus() === "mock" ? " (demo mode)" : ""}`);
 
 // Start Server
 const PORT = process.env.PORT || 5000;
