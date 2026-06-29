@@ -38,9 +38,10 @@ function AIQuickPanel({ darkMode, title, date, location, budget, onApplyBudget }
       const { result: text, source: src } = await fn(eventData);
       setResult(text);
       setSource(src);
-      toast.success(src === "mock" ? "Generated (demo mode)" : `Generated via ${src}`);
-    } catch {
-      toast.error("AI generation failed");
+      toast.success(`Generated via ${src}`);
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || err.message || "AI generation failed";
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -129,7 +130,7 @@ function AIQuickPanel({ darkMode, title, date, location, budget, onApplyBudget }
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-indigo-500 uppercase">
-                      {source === "mock" ? "Demo" : source}
+                      {source}
                     </span>
                     <div className="flex gap-2">
                       {tab === "budget" && (

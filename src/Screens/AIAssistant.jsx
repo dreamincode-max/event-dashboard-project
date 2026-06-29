@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { motion, AnimatePresence } from "framer-motion";
 import PageHeader from "../components/ui/PageHeader";
-import AIToolCard from "../components/ai/AIToolCard";
+import FormField from "../components/ui/FormField";
+import FormAlert from "../components/ui/FormAlert";
+import SubmitButton from "../components/ui/SubmitButton";
 import API from "../api";
 import {
   getAIStatus,
@@ -25,6 +28,10 @@ import {
   FaUser,
   FaClock,
   FaRupeeSign,
+  FaMagic,
+  FaCopy,
+  FaDownload,
+  FaCheck,
 } from "react-icons/fa";
 import { rules } from "../utils/validation";
 
@@ -52,6 +59,13 @@ const defaultForm = {
 function AIAssistant({ darkMode }) {
   const [aiStatus, setAiStatus] = useState(null);
   const [events, setEvents] = useState([]);
+  const [selectedEvents, setSelectedEvents] = useState({
+    description: "",
+    budget: "",
+    invitation: "",
+    schedule: "",
+    summary: "",
+  });
   const [forms, setForms] = useState({
     description: { ...defaultForm },
     budget: { ...defaultForm },
@@ -64,6 +78,7 @@ function AIAssistant({ darkMode }) {
   const [fieldErrors, setFieldErrors] = useState({});
   const [fieldTouched, setFieldTouched] = useState({});
   const [formErrors, setFormErrors] = useState({});
+  const [copiedStates, setCopiedStates] = useState({});
 
   useEffect(() => {
     getAIStatus().then((res) => setAiStatus(res.data));
@@ -113,8 +128,7 @@ function AIAssistant({ darkMode }) {
 
   const validateTool = (tool) => {
     const title = forms[tool].title?.trim();
-    const titleError =
-      rules.required(title) || rules.minLength(3)(title);
+    const titleError = rules.required(title) || rules.minLength(3)(title);
     setFieldTouched((prev) => ({
       ...prev,
       [tool]: { ...prev[tool], title: true },
@@ -135,6 +149,7 @@ function AIAssistant({ darkMode }) {
   };
 
   const fillFromEvent = (tool, eventId) => {
+    setSelectedEvents((prev) => ({ ...prev, [tool]: eventId }));
     if (!eventId) return;
     const event = events.find((e) => e._id === eventId);
     if (!event) return;
@@ -157,155 +172,347 @@ function AIAssistant({ darkMode }) {
 
     setLoading((prev) => ({ ...prev, [tool]: true }));
     try {
-      const { result, source } = await generatorFn(forms[tool]);
+      const payload =
+        tool === "summary"
+          ? {
+              ...forms.summary,
+              totalEvents: events.length,
+              upcomingEvents: events.filter((e) => e.status === "Upcoming").length,
+              completedEvents: events.filter((e) => e.status === "Completed").length,
+            }
+          : forms[tool];
+
+      const { result, source } = await generatorFn(payload);
       setResults((prev) => ({ ...prev, [tool]: { result, source } }));
-      toast.success(
-        source === "mock"
-          ? "Generated (demo mode)"
-          : `Generated via ${source}`
-      );
-    } catch {
-      toast.error("Generation failed");
+      toast.success(`Generated via ${source}`);
+    } catch (err) {
+      const errorMsg =
+        err.response?.data?.message || err.message || "Generation failed";
+      toast.error(errorMsg);
     } finally {
       setLoading((prev) => ({ ...prev, [tool]: false }));
     }
   };
 
-  const sharedFields = [
-    { name: "title", label: "Event title", icon: FaTag, placeholder: "Summer Wedding Reception", required: true },
-    { name: "date", label: "Date", type: "date", icon: FaCalendarAlt },
-    { name: "location", label: "Location", icon: FaMapMarkerAlt, placeholder: "Hyderabad, India" },
-    { name: "eventType", label: "Event type", icon: FaTag, options: EVENT_TYPES },
-    { name: "guestCount", label: "Guest count", type: "number", icon: FaUsers, placeholder: "100", hint: "Expected attendees" },
+  const handleCopyToClipboard = (tool) => {
+    const text = results[tool]?.result;
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedStates((prev) => ({ ...prev, [tool]: true }));
+    toast.success("Copied to clipboard!");
+    setTimeout(() => {
+      setCopiedStates((prev) => ({ ...prev, [tool]: false }));
+    }, 2000);
+  };
+
+  const handleDownload = (tool, title) => {
+    const text = results[tool]?.result;
+    if (!text) return;
+    const element = document.createElement("a");
+    const file = new Blob([text], { type: "text/plain" });
+    element.href = URL.createObjectURL(file);
+    element.download = `${title.toLowerCase().replace(/ /g, "_")}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    toast.success("File download started");
+  };
+
+  const handleApplyBudgetToEvent = async (tool) => {
+    const eventId = selectedEvents[tool];
+    if (!eventId) {
+      toast.warning("Please select an event from the list to apply the budget");
+      return;
+    }
+    const text = results.budget?.result;
+    if (!text) return;
+
+    // Extract budget amount
+    const match = text.match(/₹([\d,]+)/);
+    const suggestedAmount = match ? match[1].replace(/,/g, "") : null;
+
+    if (!suggestedAmount) {
+      toast.warning("Could not extract a valid budget number from the suggested text");
+      return;
+    }
+
+    try {
+      const event = events.find((e) => e._id === eventId);
+      if (!event) return;
+
+      await API.put(`/events/${eventId}`, {
+        title: event.title,
+        date: event.date,
+        location: event.location,
+        status: event.status,
+        budget: Number(suggestedAmount),
+      });
+
+      // Update local event list budget
+      setEvents((prev) =>
+        prev.map((e) =>
+          e._id === eventId ? { ...e, budget: Number(suggestedAmount) } : e
+        )
+      );
+
+      toast.success(`Successfully applied budget of ₹${Number(suggestedAmount).toLocaleString("en-IN")} to "${event.title}"!`);
+    } catch (err) {
+      toast.error("Failed to update event budget in database");
+    }
+  };
+
+  const sharedFields = (tool) => [
+    { name: "title", label: "Event Title", icon: FaTag, placeholder: "e.g. Summer Wedding Reception", required: true },
+    { name: "date", label: "Event Date", type: "date", icon: FaCalendarAlt },
+    { name: "location", label: "Location", icon: FaMapMarkerAlt, placeholder: "City, venue, or address" },
   ];
 
-  const eventPicker = (tool) => (
-    <div className="form-field">
-      <label className="label">Load from existing event</label>
+  const renderCardHeader = (Icon, title, description) => (
+    <div className="flex items-start gap-4 mb-5">
+      <div className={`p-3 rounded-xl ${darkMode ? "bg-indigo-600/10 text-indigo-400 border border-slate-700" : "bg-indigo-50 text-indigo-600"}`}>
+        <Icon className="text-lg" />
+      </div>
+      <div>
+        <h3 className={`font-display text-base font-bold ${darkMode ? "text-white" : "text-slate-900"}`}>
+          {title}
+        </h3>
+        <p className={`text-xs mt-0.5 ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+
+  const renderEventPicker = (tool) => (
+    <div className="form-field mb-4">
+      <label className="label">Load From Event</label>
       <select
-        defaultValue=""
+        value={selectedEvents[tool]}
         onChange={(e) => fillFromEvent(tool, e.target.value)}
         className="input select"
       >
-        <option value="">— Select an event —</option>
+        <option value="">— Select an Event —</option>
         {events.map((ev) => (
           <option key={ev._id} value={ev._id}>
-            {ev.title} ({ev.date})
+            {ev.title}
           </option>
         ))}
       </select>
     </div>
   );
 
-  const cardProps = (tool) => ({
-    fieldErrors: fieldErrors[tool] || {},
-    fieldTouched: fieldTouched[tool] || {},
-    formError: formErrors[tool] || "",
-    onFormBlur: (field) => blurField(tool, field),
-  });
+  const renderOutputArea = (tool, title) => {
+    const result = results[tool];
+    if (loading[tool]) {
+      return (
+        <div className="mt-5 space-y-3 p-4 rounded-xl border border-dashed border-slate-700 bg-slate-950/20">
+          <div className="h-4 rounded skeleton w-3/4" />
+          <div className="h-4 rounded skeleton w-5/6" />
+          <div className="h-4 rounded skeleton w-2/3" />
+        </div>
+      );
+    }
+    if (!result) return null;
+
+    return (
+      <div className={`mt-5 p-4 rounded-xl border relative ${
+        darkMode ? "bg-slate-900/50 border-slate-800" : "bg-slate-50 border-slate-200"
+      }`}>
+        <div className="flex items-center justify-between mb-3">
+          <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+            darkMode ? "bg-indigo-500/10 text-indigo-400" : "bg-indigo-50 text-indigo-600"
+          }`}>
+            Response (via {result.source})
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => handleCopyToClipboard(tool)}
+              title="Copy"
+              className={`p-1.5 rounded-lg border transition-colors ${
+                darkMode
+                  ? "text-slate-400 hover:text-white bg-slate-800 border-slate-700"
+                  : "text-slate-600 hover:text-slate-950 bg-white border-slate-200"
+              }`}
+            >
+              {copiedStates[tool] ? <FaCheck className="text-emerald-400 text-xs" /> : <FaCopy className="text-xs" />}
+            </button>
+            <button
+              onClick={() => handleDownload(tool, title)}
+              title="Download as Text"
+              className={`p-1.5 rounded-lg border transition-colors ${
+                darkMode
+                  ? "text-slate-400 hover:text-white bg-slate-800 border-slate-700"
+                  : "text-slate-600 hover:text-slate-950 bg-white border-slate-200"
+              }`}
+            >
+              <FaDownload className="text-xs" />
+            </button>
+          </div>
+        </div>
+        <div className="whitespace-pre-wrap text-sm leading-relaxed font-body text-slate-800 dark:text-slate-200 select-text max-h-[300px] overflow-y-auto">
+          {result.result}
+        </div>
+
+        {tool === "budget" && (
+          <div className="mt-4 pt-3 border-t border-slate-800/20 flex items-center justify-between gap-4">
+            <span className="text-[11px] text-slate-500">
+              {selectedEvents.budget ? "Apply recommended budget to the selected event record." : "Select an event above to apply this budget."}
+            </span>
+            <button
+              type="button"
+              disabled={!selectedEvents.budget}
+              onClick={() => handleApplyBudgetToEvent("budget")}
+              className="btn btn-success btn-sm flex items-center gap-1.5 text-xs font-semibold shrink-0"
+            >
+              <FaCheck className="text-[10px]" /> Apply Budget
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderFormFields = (tool, fields) => {
+    return (
+      <div className="form-grid form-grid-sm-2 gap-4">
+        {fields.map((field) => (
+          <FormField
+            key={field.name}
+            darkMode={darkMode}
+            label={field.label}
+            name={field.name}
+            type={field.type}
+            icon={field.icon}
+            placeholder={field.placeholder}
+            value={forms[tool][field.name] || ""}
+            onChange={(_, val) => updateForm(tool, field.name, val)}
+            onBlur={() => blurField(tool, field.name)}
+            error={fieldErrors[tool]?.[field.name]}
+            touched={fieldTouched[tool]?.[field.name]}
+            hint={field.hint}
+            required={field.required}
+            options={field.options}
+            variant="default"
+          />
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="AI Assistant"
-        subtitle="Generate descriptions, budgets, invitations, schedules, and summaries powered by AI."
-        darkMode={darkMode}
-        actions={
-          aiStatus && (
-            <span
-              className={`inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full ${
-                aiStatus.mockMode
-                  ? "bg-amber-500/20 text-amber-200 border border-amber-400/30"
-                  : "bg-emerald-500/20 text-emerald-200 border border-emerald-400/30"
-              }`}
-            >
-              <FaRobot />
-              {aiStatus.message}
-            </span>
-          )
-        }
-      />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <PageHeader
+          title="AI Assistant"
+          subtitle="Generate descriptions, budgets, invitations, schedules, and summaries powered by AI."
+          darkMode={darkMode}
+        />
+        {aiStatus && (
+          <div className={`flex items-center gap-2 self-start md:self-center px-3 py-1.5 rounded-full text-xs font-semibold ${
+            darkMode ? "bg-slate-800 text-indigo-400 border border-slate-700" : "bg-indigo-50 text-indigo-600 border border-indigo-100"
+          }`}>
+            <FaRobot className="animate-pulse" />
+            <span>AI Ready: {aiStatus.provider}</span>
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <AIToolCard
-          icon={FaPen}
-          title="Event Description Generator"
-          description="Create engaging marketing copy for your event page or social media."
-          topSlot={eventPicker("description")}
-          fields={sharedFields}
-          formData={forms.description}
-          onFormChange={(f, v) => updateForm("description", f, v)}
-          onGenerate={() => runGenerator("description", generateEventDescription)}
-          result={results.description?.result}
-          source={results.description?.source}
-          loading={loading.description}
-          darkMode={darkMode}
-          {...cardProps("description")}
-        />
+        {/* Tool 1: Description Generator */}
+        <div className={`card p-6 ${darkMode ? "card-dark" : ""}`}>
+          {renderCardHeader(FaPen, "Event Description Generator", "Create engaging marketing copy for your event page or social media.")}
+          {renderEventPicker("description")}
+          <div className={`border-t my-4 ${darkMode ? "border-slate-800" : "border-slate-100"}`} />
+          {renderFormFields("description", [
+            ...sharedFields("description"),
+            { name: "eventType", label: "Event Type", icon: FaTag, options: EVENT_TYPES },
+            { name: "guestCount", label: "Expected Guests", type: "number", icon: FaUsers, placeholder: "100" },
+          ])}
+          <FormAlert message={formErrors.description ? { type: "error", text: formErrors.description } : null} variant="default" className="mt-4" />
+          <SubmitButton
+            loading={loading.description}
+            loadingText="Generating..."
+            onClick={() => runGenerator("description", generateEventDescription)}
+            className="btn btn-primary w-full flex items-center justify-center gap-2 mt-4"
+          >
+            <FaMagic /> Generate with AI
+          </SubmitButton>
+          {renderOutputArea("description", "Event Description")}
+        </div>
 
-        <AIToolCard
-          icon={FaWallet}
-          title="Budget Suggestion"
-          description="Get AI-recommended budget breakdowns tailored to your event type and guest count."
-          topSlot={eventPicker("budget")}
-          fields={sharedFields}
-          formData={forms.budget}
-          onFormChange={(f, v) => updateForm("budget", f, v)}
-          onGenerate={() => runGenerator("budget", generateBudgetSuggestion)}
-          result={results.budget?.result}
-          source={results.budget?.source}
-          loading={loading.budget}
-          darkMode={darkMode}
-          {...cardProps("budget")}
-        />
+        {/* Tool 2: Budget Suggestion */}
+        <div className={`card p-6 ${darkMode ? "card-dark" : ""}`}>
+          {renderCardHeader(FaWallet, "Budget Suggestion", "Get AI-recommended budget breakdowns tailored to your event details.")}
+          {renderEventPicker("budget")}
+          <div className={`border-t my-4 ${darkMode ? "border-slate-800" : "border-slate-100"}`} />
+          {renderFormFields("budget", [
+            ...sharedFields("budget"),
+            { name: "eventType", label: "Event Type", icon: FaTag, options: EVENT_TYPES },
+            { name: "guestCount", label: "Expected Guests", type: "number", icon: FaUsers, placeholder: "100" },
+          ])}
+          <FormAlert message={formErrors.budget ? { type: "error", text: formErrors.budget } : null} variant="default" className="mt-4" />
+          <SubmitButton
+            loading={loading.budget}
+            loadingText="Generating..."
+            onClick={() => runGenerator("budget", generateBudgetSuggestion)}
+            className="btn btn-primary w-full flex items-center justify-center gap-2 mt-4"
+          >
+            <FaMagic /> Generate with AI
+          </SubmitButton>
+          {renderOutputArea("budget", "Budget Suggestion")}
+        </div>
 
-        <AIToolCard
-          icon={FaEnvelope}
-          title="Invitation Generator"
-          description="Draft elegant invitation letters ready to send to your guests."
-          topSlot={eventPicker("invitation")}
-          fields={[
-            ...sharedFields.slice(0, 3),
-            { name: "hostName", label: "Host name", icon: FaUser, placeholder: "Jahnavi" },
-            { name: "guestName", label: "Guest name", icon: FaUser, placeholder: "Priya Sharma" },
-          ]}
-          formData={forms.invitation}
-          onFormChange={(f, v) => updateForm("invitation", f, v)}
-          onGenerate={() => runGenerator("invitation", generateInvitation)}
-          result={results.invitation?.result}
-          source={results.invitation?.source}
-          loading={loading.invitation}
-          darkMode={darkMode}
-          {...cardProps("invitation")}
-        />
+        {/* Tool 3: Invitation Generator */}
+        <div className={`card p-6 ${darkMode ? "card-dark" : ""}`}>
+          {renderCardHeader(FaEnvelope, "Invitation Writer", "Draft professional yet warm invitation letters ready to send to guests.")}
+          {renderEventPicker("invitation")}
+          <div className={`border-t my-4 ${darkMode ? "border-slate-800" : "border-slate-100"}`} />
+          {renderFormFields("invitation", [
+            ...sharedFields("invitation"),
+            { name: "hostName", label: "Host Name", icon: FaUser, placeholder: "Jahnavi" },
+            { name: "guestName", label: "Guest Name", icon: FaUser, placeholder: "Priya Sharma" },
+          ])}
+          <FormAlert message={formErrors.invitation ? { type: "error", text: formErrors.invitation } : null} variant="default" className="mt-4" />
+          <SubmitButton
+            loading={loading.invitation}
+            loadingText="Generating..."
+            onClick={() => runGenerator("invitation", generateInvitation)}
+            className="btn btn-primary w-full flex items-center justify-center gap-2 mt-4"
+          >
+            <FaMagic /> Generate with AI
+          </SubmitButton>
+          {renderOutputArea("invitation", "Invitation Writer")}
+        </div>
 
-        <AIToolCard
-          icon={FaCalendarCheck}
-          title="Schedule Generator"
-          description="Build a detailed day-of timeline with time blocks and checklists."
-          topSlot={eventPicker("schedule")}
-          fields={[
-            ...sharedFields.slice(0, 3),
+        {/* Tool 4: Schedule Planner */}
+        <div className={`card p-6 ${darkMode ? "card-dark" : ""}`}>
+          {renderCardHeader(FaCalendarCheck, "Schedule Planner", "Build a detailed day-of timeline with time blocks and checklists.")}
+          {renderEventPicker("schedule")}
+          <div className={`border-t my-4 ${darkMode ? "border-slate-800" : "border-slate-100"}`} />
+          {renderFormFields("schedule", [
+            ...sharedFields("schedule"),
             { name: "duration", label: "Duration", icon: FaClock, placeholder: "6 hours", hint: "e.g. 6 hours, full day" },
-          ]}
-          formData={forms.schedule}
-          onFormChange={(f, v) => updateForm("schedule", f, v)}
-          onGenerate={() => runGenerator("schedule", generateSchedule)}
-          result={results.schedule?.result}
-          source={results.schedule?.source}
-          loading={loading.schedule}
-          darkMode={darkMode}
-          {...cardProps("schedule")}
-        />
+          ])}
+          <FormAlert message={formErrors.schedule ? { type: "error", text: formErrors.schedule } : null} variant="default" className="mt-4" />
+          <SubmitButton
+            loading={loading.schedule}
+            loadingText="Generating..."
+            onClick={() => runGenerator("schedule", generateSchedule)}
+            className="btn btn-primary w-full flex items-center justify-center gap-2 mt-4"
+          >
+            <FaMagic /> Generate with AI
+          </SubmitButton>
+          {renderOutputArea("schedule", "Schedule Planner")}
+        </div>
 
-        <AIToolCard
-          icon={FaChartPie}
-          title="Event Summary Generator"
-          description="Generate executive summary reports with highlights and next steps."
-          topSlot={eventPicker("summary")}
-          fields={[
-            ...sharedFields.slice(0, 3),
-            { name: "budget", label: "Budget (₹)", type: "number", icon: FaRupeeSign, placeholder: "500000" },
+        {/* Tool 5: Event Summary Generator */}
+        <div className={`card p-6 ${darkMode ? "card-dark" : ""}`}>
+          {renderCardHeader(FaChartPie, "Event Summary Generator", "Generate executive summary reports with highlights and next steps.")}
+          {renderEventPicker("summary")}
+          <div className={`border-t my-4 ${darkMode ? "border-slate-800" : "border-slate-100"}`} />
+          {renderFormFields("summary", [
+            ...sharedFields("summary"),
+            { name: "budget", label: "Total Budget (₹)", type: "number", icon: FaRupeeSign, placeholder: "500000" },
             {
               name: "status",
               label: "Status",
@@ -317,25 +524,18 @@ function AIAssistant({ darkMode }) {
               ],
             },
             { name: "guestCount", label: "Guest count", type: "number", icon: FaUsers, placeholder: "100" },
-          ]}
-          formData={forms.summary}
-          onFormChange={(f, v) => updateForm("summary", f, v)}
-          onGenerate={() =>
-            runGenerator("summary", () =>
-              generateEventSummary({
-                ...forms.summary,
-                totalEvents: events.length,
-                upcomingEvents: events.filter((e) => e.status === "Upcoming").length,
-                completedEvents: events.filter((e) => e.status === "Completed").length,
-              })
-            )
-          }
-          result={results.summary?.result}
-          source={results.summary?.source}
-          loading={loading.summary}
-          darkMode={darkMode}
-          {...cardProps("summary")}
-        />
+          ])}
+          <FormAlert message={formErrors.summary ? { type: "error", text: formErrors.summary } : null} variant="default" className="mt-4" />
+          <SubmitButton
+            loading={loading.summary}
+            loadingText="Generating..."
+            onClick={() => runGenerator("summary", generateEventSummary)}
+            className="btn btn-primary w-full flex items-center justify-center gap-2 mt-4"
+          >
+            <FaMagic /> Generate with AI
+          </SubmitButton>
+          {renderOutputArea("summary", "Event Summary")}
+        </div>
       </div>
     </div>
   );

@@ -7,11 +7,11 @@ router.get("/status", (req, res) => {
   const provider = getProviderStatus();
   res.json({
     provider,
-    mockMode: provider === "mock",
+    mockMode: provider !== "openai",
     message:
-      provider === "mock"
-        ? "No API key configured — using demo responses"
-        : `Connected to ${provider}`,
+      provider === "openai"
+        ? `Connected to ${provider}`
+        : "No API key configured",
   });
 });
 
